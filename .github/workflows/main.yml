@@ -1,0 +1,47 @@
+name: Build EXE
+on: [push]
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Create and Configure Project
+        run: |
+          # 1. Create a WinForms project (WinForms naturally avoids the terminal)
+          dotnet new winforms -n VtuberApp --force
+          
+          # 2. Force the OutputType to WinExe to ensure 0 terminal pop-up
+          $path = "VtuberApp/VtuberApp.csproj"
+          (Get-Content $path) -replace '<OutputType>Exe</OutputType>', '<OutputType>WinExe</OutputType>' | Set-Content $path
+          
+          # 3. Clean out template files so they don't conflict with your code
+          Remove-Item VtuberApp/Form1.cs, VtuberApp/Form1.Designer.cs, VtuberApp/Program.cs -ErrorAction SilentlyContinue
+          
+          # 4. Use your code as the main entry point
+          Copy-Item VtuberMod.cs VtuberApp/Program.cs
+
+      - name: Compile to Single Windowless EXE
+        # --self-contained: User doesn't need to install .NET to run it
+        # -p:PublishSingleFile: Makes it one single .exe file
+        run: >
+          dotnet publish VtuberApp/VtuberApp.csproj 
+          -c Release 
+          -r win-x64 
+          --self-contained true 
+          -p:PublishSingleFile=true 
+          -p:IncludeNativeLibrariesForSelfExtract=true 
+          -o ./output
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: VtuberMod_EXE
+          path: ./output/*.exe
