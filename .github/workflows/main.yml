@@ -1,20 +1,32 @@
-name: Build EXE
+name: Build Windows EXE
 on: [push]
+
 jobs:
   build:
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '8.0.x'
-      - name: Create Project File
-        run: dotnet new console --force
+
+      - name: Create WinForms Project
+        run: |
+          # Create a Windows Forms project structure
+          dotnet new winforms --force
+          
+          # Delete the default template files so they don't conflict with your code
+          Remove-Item -Path "Form1.cs", "Form1.Designer.cs", "Program.cs" -ErrorAction SilentlyContinue
+
       - name: Compile to EXE
+        # This builds a single, standalone .exe file for 64-bit Windows
         run: dotnet publish -c Release -r win-x64 --self-contained true /p:PublishSingleFile=true /p:IncludeNativeLibrariesForSelfExtract=true
-      - name: Upload EXE
+
+      - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: MyWindowsApp
+          name: VtuberAddon_EXE
           path: bin/Release/net8.0/win-x64/publish/*.exe
