@@ -25,8 +25,9 @@ jobs:
         # This builds a single, standalone .exe file for 64-bit Windows
         run: dotnet publish -c Release -r win-x64 --self-contained true /p:PublishSingleFile=true /p:IncludeNativeLibrariesForSelfExtract=true
 
-      - name: Upload Artifact
+           - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
           name: VtuberAddon_EXE
-          path: bin/Release/net8.0/win-x64/publish/*.exe
+          path: |
+            **/publish/*.exe
